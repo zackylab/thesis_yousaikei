@@ -1,0 +1,41 @@
+----------
+rev.210913
+
+【ファイルの追加】
+OverleafでpLaTeXを指定するためにlatexmkrcファイルを追加しました．ローカル環境でビルドする場合は適宜中身を書き換えてください．
+
+【全体の構成について変更】
+表紙を削除して，標題紙，論文概要の順番に変更しました．
+
+【修正項目】
+＜Ja・En共通＞
+・標題紙のタイトルフォントサイズを副題含めて全て20ptにしました．
+・標題紙の著者情報のふぁおんとサイズを全て16ptにしました．
+・論文概要の学籍番号をその行ごと削除しました．
+
+＜Ja＞
+・標題紙に「人間総合科学学術院人間総合科学研究群」を追加しました．
+・「研究指導教員」を「主研究指導教員」に変更しました．
+
+＜En＞
+・標題紙に"Degree Programs in Comprehensive Human Sciences"および"Graduate School of Comprehensive Human Sciences"を追加しました．
+・例に示されている"Ichiro Daigaku"，"Hanako Shiho"の姓の部分をそれぞれ"DAIGAKU"，"SHIHO"に変更しました．
+
+----------
+rev.210310
+
+【全体の構成について変更】
+本論が英語の場合、学位論文概要のページに日本語表記が不要になったようなので、旧Ja-Enに該当するものがなくなったと判断し、JaとEnの2つのテンプレートとしました。
+
+【修正項目】
+＜Ja・En共通＞
+・表紙、標題紙から下線表記を削除しました
+・学位論文概要のサンプル文を、手引に従い変更しました
+
+＜Ja＞
+・「図書館情報メディア研究科」の表記を「情報学学位プログラム」に変更しました
+・学位論文概要のページで英語表記を付記できるよう、TeX側に新しいコマンド\jabst{}と\eabst{}を実装しました。\jabst{}は必須項目で日本語の概要を、\eabst{}は任意項目で英語の概要を入力します。
+
+＜En＞
+・"Graduate School of Library, Information and Media Studies"の表記を"Master's Program in Informatics"に変更しました。
+・学位論文概要のページに表記する指導教員について、"Principal Academic Advisor"の表記を"Main Academic Advisor"に変更し、例に示されている"Ichiro DAIGAKU"、"Hanako SHIHO"の姓の部分をそれぞれ"Daigaku"、"Hanako"に変更しました。

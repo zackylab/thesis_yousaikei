@@ -1,0 +1,404 @@
+\documentclass[a4paper]{jreport}	% 日本語の場合
+
+\usepackage{masterThesisJa}
+\usepackage{graphicx}
+\usepackage{float}
+\setcounter{tocdepth}{3}
+\setcounter{page}{-1}
+
+% 【必須】主題：\maintatile{日本語}{英語}
+\maintitle{Elixirを基く画像処理フォールトトレラントパイプラインの構築と評価}
+
+% 【任意】副題：\subtitle{日本語}{英語}
+% 副題が不要な場合は次の行をコメントアウトしてください
+\subtitle{Construction and evaluation of image processing fault-tolerant pipeline based on elixir}
+
+% 【必須】発表年月：\publish{年}{月}
+\publish{2024}{03}
+
+
+
+% 【必須】学生情報：\student{学籍番号}{氏名（日本語：氏名の間は1文字空ける）}{氏名（英語：Twins登録の表記）}
+\student{20XX21XXX}{ヨウ　サイケイ}
+
+% 【必須】日本語の概要：\jabst{概要}
+
+%\jabst{　この文書は、北九州市立大学}
+
+% 【任意】英語の概要：\eabst{Abstract}
+% 英語の概要が不要な場合は\eabst{}をすべてコメントアウトしてください
+%\eabst{\\　英語をつけてもよい}
+
+% 【必須】研究指導教員（氏名の間は1文字空ける）：\advisors{主研究指導教員}{副研究指導教員}
+%\advisors{山崎　進}
+
+
+% 以下，本文を出力
+\begin{document}
+
+\makecover
+
+\addtolength{\textheight}{-5mm}	% 本文の下限を5mm上昇
+\setlength{\footskip}{15mm}	% フッタの高さを15mmに設定
+\fontsize{11pt}{15pt}\selectfont
+
+% 目次・表目次を出力
+\pagebreak\setcounter{page}{1}
+\pagenumbering{roman} % I, II, III, IV 
+\pagestyle{plain}
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+% 本文
+\parindent=1zw	% インデントを1文字分に設定
+\pagebreak\setcounter{page}{1}
+\pagenumbering{arabic} % 1,2,3
+\pagestyle{plain}
+
+% 章：\chapter{}
+% 節：\section{}
+% 項：\subsection{}
+
+\chapter{はじめに}
+\section{背景}
+近年，機械学習や画像処理技術は現代では非常に普及しており，私たちの日常生活のさまざまな局面で広く活用されている．たとえば，医療画像，衛星画像分析，物体認識，スペクトル分析などである．また，機械学習や画像処理の精度を向上させるために，機械学習や画像処理の大規模化・複雑化が顕著に進んでいる\cite{A}．
+\\　このような機械学習や画像処理では，大量のデータを高速処理することが求められるため，高速化を実現する1つの手段としてマルチコア等を使った並列処理が重要となる．ただし，機械学習や画像処理のシステムにおいて,マルチコアプロセッサシステム上でコードを実行しても，自動的にコードが効率化されるわけではない．また，並行・並列プログラミングにおいて,デッドロックや性能低下の問題がある\cite{B}.
+%並列化コードを生成しても，ソフトウェア全体で最適な並列化を行うことは困難である．並行・並列プログラミングにおいて
+\\　機械学習や画像処理のソフトウェア全体で最適な並列化を実現するため，山崎進，森正和，上野嘉大，高瀬英希らがElixirに着目した.その結果,機械学習や画像処理のデファクトスタンダードであるPythonと比べてElixirの潜在的優位性が示された\cite{C}.
+\\　機械学習や画像処理にElixirをより効率的に使うために，NxとEvisionを開発された．Nxは高速的に機械学習に対処できる.Evisionは画像処理に対処できる.
+\\　しかし,NxとEvisionを使って，巨大な画像を処理すると，メモリ不足などによる異常終了になることがある．特にEvisionとNxのアクセラレータであるEXLAがNIF関数を使用しており，NIF関数が異常終了すると，Erlang VM 全体が異常終了になる可能性がある．
+\\　このように多様かつ複雑なアプリケーションは機械学習や画像処理システムの異常終了により，極端な場合，人命や巨額の金銭が危険にさらされる可能性がある．
+\\　したがって，このような機械学習や画像処理システムの構築において耐障害性はかなり重要な部分である．
+\\　機械学習や画像処理において耐障害性の高いパイプラインを構築する為に，山崎進は2022年のElixirConfで巨大な画像に対する堅牢な分散並列処理について講演した,その中にHtPipeを提案された\cite{E}．HtPipeはNIF関数が異常終了することで，Erlang VM全体が異常終了するのは回避できるが,並列処理で関数の作成と呼び出しにはBroadwayを使用する方が簡潔で効率的である.また,Broadwayではデータの生成部分と処理部分が分離されており，一時的に一部の機能が失われたとしても,データの流れは整然と処理される.
+\\　したがって，そのようなパイプラインには，まだ改善すべき部分が存在していると考えられる.このような背景から，我々は，Broadwayのデータ取り込みとデータ処理機能を機械学習や画像処理パイプラインとして活用することに着目する.
+%Broadwayにおける、Broadwayによる、Broadwayのxxにおける及び耐障害性の上昇が期待している。
+%\\ここで，システムにおける信頼性とは、システムの処理が定められた時刻(デッドライン)までに障害が起きないことを指す\cite{D}.
+%\\これによって，耐障害性の高い並列処理パイプラインを構築するため，Broadwayと HtPipeを用いることを提案する．
+
+\section{目的}
+この研究の目標は，機械学習や画像処理を行うBroadwayパイプラインを構築し，その中でHtPipeを用いることで，耐障害性を向上させたパイプラインの開発と評価を行うことである．
+\section{アプローチ}
+\subsection{研究手段}
+本研究では，耐障害性を向上させたパイプラインの開発するための足掛かりとして，Elixirのライブラリ関数のBroadwayをHtPipeと機能等価なパイプラインとして設計することに取り組む.
+\\　一つは，Broadway自体のSupervisorを使って，Broadway内の個々のプロセスを監視し，巨大な画像を処理すると，メモリ不足などによる異常終了が発生した場合に再起動する.これによって，異常終了になることを避ける.
+\\　も一つは，Nodeの動作における親と子のノード間のメッセージ通信を介して，クラッシュの原因となるNIF関数は子ノードで呼び出されて，このようにして，子のノードがクラッシュした後でも，親ノードが影響を受けない.これによって，NIFが異常終了しても，起動元のErlang VMに波及することはないである.
+\subsection{評価手法}
+実装を行ったBroadwayパイプラインを二重システム制御実験で評価する.つまり，Broadwayパイプラインを使用した実験とBroadwayパイプラインを使用しない実験の対照実験が行う.
+
+評価にはFault-Injection (以下，FI と略す)を使用して，子プロセスをシャットダウンする関数１とabortを伴う NIF 関数２を作成する.
+
+それから，作成した関数 1 と関数 2 をそれぞれパイプラインがインストールされている環境とインストールされていない環境で呼び出す.Broadwayパイプラインの回復機能に基づくパイプラインに関するフォールトトレランスの効果評価する.
+
+\section{論文の構成}
+本稿の構成は，以下のとおりである．2章に本手法を実装するうえで基となるBroadwayとNodeについて述べる．3章において，機械学習や画像処理を行うBroadwayパイプラインの提案と実装方法について説明し，第4章で実装成果の評価結果を示す．第5章で本稿をまとめる.
+
+
+\chapter{関連研究}
+\section{Broadway}
+Broadway は，Elixir チームによってデータパイプラインを作成および管理できるツールである．イベントと，メトリクス，自動応答，障害処理などの運用機能に重点を置いている\cite{D}．本章では，2.1.1 節で，Broadway の耐故障性能の基盤技術となるBroadwayのSupervisor動作について簡単に述べたうえで，2.1.2 節で Broadwayにおけるデータ処理パイプラインを作成するための構成要素GenServerについて述べる.
+\subsection{BroadwayのSupervisor動作}
+BroadwayのSupervisorは職場でスーパーバイザーが従業員のグループに対して責任を負うのと同じように,割り当てられたプロセスに対して責任を負う.下位プロセスも上司に報告する必要があり,上司はすべてがスムーズに実行されていることを確認する必要がある.これを実現するために,スーパーバイザには,他のプロセスを効果的に管理できる一連の機能が付属している. プロセスを開始および停止したり,システム内で予期しないエラーが発生した場合にはプロセスを再起動したりできる.これらは終了をトラップするように構成されているため,監視対象プロセスがエラーで終了すると,そのエラーは隔離され,それ以上伝播することはないである. 
+
+Broadway の Supervisor 動作は，主に以下の部品により 構成されており，それぞれの関係を図 2 に表す.
+
+ツリーの最上部には,プロジェクト スーパーバイザーである Broadway Pipeline Supervisorがあり,application.ex ファイルで定義されている.
+
+def start(\_type, \_args) do 
+
+children = [
+
+    \# Starts a worker by calling: Broadway.worker.start\_link(arg)
+    
+    
+]
+
+ \# See https://hexdocs.pm/elixir/Supervisor.html
+
+ \# for other strategies and supported options
+
+opts = [strategy: :one\_for\_one, name: Broadway.Supervisor] 
+
+Supervisor.start\_link(children, opts)
+
+end
+
+Broadway Pipeline Supervisorは,Broadwayのさまざまなコンポーネントをすべて監視し,エラーが発生した場合は再起動する機能を持っている.Broadway Pipeline Supervisorが監視するプロセスとその目的を以下に示す.
+
+• ProducerSupervisor:データ プロデューサー プロセスの監視を担当する. この監視ツリーには,問題が発生している特定のデータ プロデューサーのみを再起動する必要があるため,:one\_for\_one の戦略が採用されている. すべてが問題なければ,他のすべてのプロデューサーは実行を続けることができる.
+
+• ProcessSupervisor:プロデューサーからのデータを消費するワーカー プロセスを監視する責任がある.この監視ツリーには,:one\_for\_all の戦略がある.これが :one\_for\_one ではない理由は作成する処理コールバック関数がステートレスである必要があり,発生したエラーはプロセスをクラッシュさせることなく処理できるためである. エラーが発生してプロセスがクラッシュした場合は,Broadwayに関連する内部簿記の一部に問題が発生している可能性があ,すべてのコンシューマーを再起動する必要がある.
+
+• BatchersSupervisor: バッチを動的に監視するために使用できる.この監視ツリーには,:one\_for\_all の戦略がある.これが :one\_for\_one ではない理由はProcessSupervisorと同じである.
+
+• Terminator: Broadwayパイプラインを適切に停止する責任がある. これは,すべてのコンシューマ プロセスに,終了後にプロデューサに再サブスクライブしてはならないことを通知する.また,すべてのプロデューサに対して,現在のイベントをすべてフラッシュし,後続のデータ要求を無視するように通知する.
+
+Broadway Pipeline Supervisorには :rest\_for\_one という監視ポリシーがあることも重要である. その理由は,プロデューサー監視ツリーがクラッシュした場合,親Supervisorは後続のすべての監視ツリーを再起動し,パイプラインを動作中の新しい状態に復元できるためである.
+
+
+これらすべてにより,Supervisorは耐故障性能の基盤技術となる.
+
+\subsection{BroadwayのGenServer動作}
+GenServer(generic serverの略) は,クライアントとサーバーの関係のサーバーを実装するための動作モジュールである.状態を保持したり,コードを非同期に実行したりするために使用されるだけではない.また,標準的なインターフェイス関数セットがあり,トレースおよびエラー報告の機能も含まれる\cite{M}.
+
+GenServer モジュールは,GenServer の動作に必要ないくつかの関数のデフォルト実装を提供する.これらの関数はコールバックとして機能する.コールバックを実装するときは,次の 2 つのことを知っておく必要がある.
+
+• コールバック関数が受け取る引数
+
+• どのような戻り値がサポートされている
+
+GenServer の動作に関する次のコールバック関数について説明する.
+
+• handle\_call/3
+
+handle\_call/3 は,クライアントから GenServer プロセスへの同期呼び出しを処理するために使用される.
+
+• handle\_cast/2
+
+handle\_cast/2 は,通常は他のプロセスまたはタイマーによってトリガーされる非同期イベントを処理するために使用される.
+
+• init/1
+
+init/1 は,GenServer プロセスの状態を初期化するために使用される必須のコールバック関数である. これはプロセスの開始時に呼び出され,通常はいくつかの初期化操作を実行するために使用され,プロセスの初期状態を含むタプルを返す.
+
+
+これら 3 つのコールバック関数が一緒になって GenServer のコア動作を形成し,同期および非同期メッセージを処理できるようになり,Broadwayパイプラインが同時実行および並列実行を処理できるようになる.また,Broadwayパイプラインをカスタマイズできる.更にバックグラウンドでも実行される存続期間の長いプロセスを作成し,より優れた制御と柔軟性を提供する.
+
+
+\section{Node}
+Nodeは，ElixirがErlang言語から継承するライブラリ関数である\cite{H}.NodeによりElixirはErlangの強力な分散機能へアクセス可能である\cite{J}.
+
+Nodeには，作成された各ノードは実行中の Erlang ランタイム システムとなる.ランタイム システムには,同時実行性,分散,フォールト トレランスのサポートが組み込まれている.
+
+これによって,Elixirコンテキストでの配布は,言語の多くの機能がコードを変更せずにネットワーク上で動作することを意味する. 同時に,プロセスやメッセージ パッシングなどの基本的なプリミティブとプロセス リンクやモニターなどのより高度な概念も含まれる.
+
+相互に接続する Erlang VM インスタンスは,Erlang ノードのクラスターと呼ばれる. Erlang ノードがクラスターに接続すると,その ID が他のすべてのノードに伝達され,Erlang ノードと他のすべてのノードの間に別のネットワーク接続が設定される.これは、いわゆる全結合メッシュになる.すべてのノードは他のすべてのノードに接続されているため,クラスター内の合計接続数は二次関数的に増加する.接続されたノードのセットのすべての接続の合計 c は \[ \sum_{c=1}^{n-1}c = \frac{n(n-1)}2\]で定義される.通常のポイントツーポイント トラフィックに加えて,Erlang ノードは各ノード接続上でティックと呼ばれるハートビート メッセージを送信し,リモートノードがまだ生きているかどうかを確認する.
+
+
+この一般的なアプローチにより,高い拡張性と耐障害性を備えたネットワーク ノードを構築できる. 分散 Erlang の元の設計は,プライベートの安全なネットワーク内で実行されることを目的としていた. したがって,デフォルトでは Erlang のノード間通信は暗号化されず \cite{I},共有秘密 (Cookie ) によってのみ保護される.異なるネットワーク内のノード間でメッセージを送信する時,同じ Cookie で起動されたノードのみが相互に正常に通信できる.
+
+
+
+
+\chapter{提案手法}
+\section{提案手法の概要}
+今回提案する一つ手法は，Elixir言語で画像処理に Broadwayのフォールトトレランスと並列処理を適用することを目指すというものである.Broadway は，スケーラブルなデータストリーム処理システムを構築するための Elixir のライブラリである.この提案は，特に画像の読み取り，画像の分割，保存操作などの画像バッチ処理にブロードウェイを使用することを目的としている. 
+
+既存手法からの変更点は，画像処理にBroadwayを使用すると，並列処理プログラムがより簡潔に記述され，画像の流れがより明確になり得る.また，Broadway パイプラインで画像タスクを処理するときに監視および回復メカニズムにより，システムの耐障害性が向上し，プロセッサのクラッシュによる画像処理の中断が軽減される.
+
+図３に既存手法 (C 言語を利用) と提案手法 (作成したBroadwayパイプラインを利用) の実行フローの比較図を示す.
+\section{実装例}
+以下で画像処理におけるBroadwayパイプラインについて述べ
+る.
+\subsection{画像処理におけるパイプラインの実装}
+パイプラインの基本構成:
+
+def start\_link(\_opts) do
+
+    Broadway.start\_link(\_ \_MODULE\_ \_,
+    
+      name: \_ \_MODULE\_\_,
+      
+      producer: [
+      
+        module: \{Counter, 1\},
+        
+        transformer: \{\_ \_MODULE\_ \_, :transform, [ ]\},
+        
+        concurrency: 1
+        
+       ],
+       
+      processors: [
+      
+        default: [concurrency: 4]
+        
+      ],
+      
+        batchers: [
+        
+        sqs: [concurrency: 2, batch\_size: 10],
+        
+        s3: [concurrency: 1, batch\_size: 10]
+        
+      ]
+      
+    )
+    
+end
+
+画像の読み取り:
+
+def init(\_a) do
+
+    img1 = 
+      "https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna\_\%28test\_image\%29.png"
+      
+  |> HTTPoison.get!()
+  
+  |> then(\&(\&1.body))
+  
+  |> Evision.imdecode(Evision.Constant.cv\_IMREAD\_COLOR()) 
+  
+  \{:producer, img1\}
+end
+
+画像の分割:
+
+def handle\_demand(demand, img1) when demand > 0 do   
+
+    src\_file = "Lenna.png"
+    
+    Evision.imwrite(src\_file, img1)
+    
+    div\_size = 256
+    
+    dst\_file\_ext = Path.extname(src\_file)
+    
+    dst\_file\_basename = Path.basename(src\_file, dst\_file\_ext)
+    
+    dst\_files =
+    
+      Stream.unfold(0, fn counter -> {counter, demand - 9} end)
+      
+      |> Stream.map(\&"\#{dst\_file\_basename}\_\#\{\&1\}\#\{dst\_file\_ext\}")
+    
+    div\_img =
+    
+    Evision.imread(src\_file)
+    
+    |> Evision.Mat.to\_nx()
+    
+    |> Nx.to\_batched(div\_size)
+    
+    |> Enum.map(\&Evision.Mat.from\_nx\_2d(\&1))
+    
+    z\_img = 
+    
+    Enum.zip(div\_img, dst\_files)
+    
+    |> Enum.to\_list()
+    
+    \{:noreply, z\_img, dst\_files\}
+  
+end
+
+コマンドラインに出力:
+
+  def handle\_message(:default, message, \_context) do
+  
+    message.data
+    
+    |> Enum.map(fn {img, dst\_file} -> Evision.imwrite(dst\_file, img) end)
+    
+    |> IO.inspect
+    
+  end
+
+\subsection{HtPipeを用いるパイプラインの実装}
+
+
+\chapter{評価実験}
+本章では，Broadwayパイプラインの耐故障性に関する評価実験を行う.まず4.1 節で，実験を行う際に用いた環境について述べる.そして4.2 節で提案手法の評価について述べ，4.3 節で障害の発生による耐故障処理の実験について述べる.
+\section{実験環境}
+実験を行っ た環境は以下の通りである。
+
+• OS : macOS Sonoma ver 14.1.1 
+
+• CPU : Apple M1
+
+• メモリ 16GB 
+
+• Elixir 言語コンパイラ : Elixir 1.15.4
+
+• Erlang 言語コンパイラ : Erlang/OTP 26 [erts-14.0.2]
+
+• Broadway バージョン :  1.0.7
+
+• Evision バージョン :  0.1.2
+
+• Nx バージョン :  0.3.0
+
+\section{評価手法}
+実験は 3 つの部分に分かれている．二重システム制御実験で，パイプラインのフォールト トレランスを評価する．
+
+• 4.3.1 節ではパイプを使用して通常のタスクを処理する。 パイプラインの可用性を確認する．
+
+• 4.3.2 節では，FIを使用して、子プロセスをシャットダウンし，パイプラインで呼び出す関数１を作成する.タスクが異常終了したときの状況を実際にシミュレートする．プロセスの異常なシャットダウンに対する回復機能を確認する．
+
+• 4.3.3 節では， FIを使用して，abortを伴う NIF 関数を作成し，パイプラインで呼び出す．NIF 関数の使用時に発生するabortをシミュレートする．NIF関数がabortされた後の Erlang VM システムのクラッシュに対する回復機能を確認する．
+
+
+\section{障害の発生による耐故障処理の実験}
+評価実験は,安全性・実行速度の 2 つの観点から実施する.以下でそれぞれの 項目について説明する.
+
+安全性:
+
+安全性の検証手法として,実際にメモリ不足などによる異常終了が発生した場合,再起動ができないかどうか実験を行う.
+
+実行速度: 
+
+既存の C 言語ライブラリを用いる場合と Elixir 言語のライブラリを用いる場合の実行速度の比較を行う.
+\subsection{画像処理におけるBroadwayパイプラインの評価} 
+
+\subsection{Broadwayパイプラインにおける回復機能1の評価} 
+
+\subsection{Broadwayパイプラインにおける回復機能2の評価}
+
+
+
+\chapter{まとめ}
+
+\chapter*{謝辞}
+
+\addcontentsline{toc}{chapter}{謝辞}
+
+
+% 参考文献（References）
+\newpage
+\addcontentsline{toc}{chapter}{参考文献}
+\renewcommand{\bibname}{参考文献}
+
+%% 参考文献に bibtex を使う場合
+%\bibliographystyle{junsrt}
+%\bibliography{hoge}
+
+%% 参考文献を直接ファイルに含めて書く場合
+\begin{thebibliography}{99}
+
+% e.g.)
+\bibitem{A}
+Tom B. Brown, Benjamin Mann et al. 2020. Language models are few-shot learners. In Proceedings of the 34th International Conference on Neural Information Processing Systems (NIPS'20). Curran Associates Inc. Red Hook, NY, USA, Article 159, 1877–1901.
+\bibitem{B}
+Jean Bacon1996. Concurrent Systems: An Integrated Approach to Operating Systems, Distributed Systems and Database. Addison-Wesley. pp.265–276.
+
+\bibitem{C}
+山崎進，森正和，上野嘉大，高瀬英希: Hastega: Elixir プ ログラミングにおける超並列化を実現するための GPGPU 活用手法，情報処理学会第 120 回プログラミング研究会， Vol. 2018，No. 2，pp. 8，2018
+\bibitem{D}
+broadway Build concurrent and multi-stage data ingestion and data processing pipelines with Elixir https://github.com/dashbitco/ broadway (2023.10.2) ．
+%American Society for Quality (ASQ). 2022. Glossary: Reliability. Accessed on May 9, 2022. Available at http://asq.org/glossary/r.html.
+\bibitem{E}
+Susumu Yamazaki: Robust, Distributed, and Parallel Processing for Enormous Images https://www.youtube.com/watch?v=RkMzCQm-Ws4t=1087s (2023.11.12).
+\bibitem{F}
+Hsueh, M.-C., Tsai, T.K. and Iyer, R.K.: Fault Injection Techniques and Tools, IEEE Computer, Vol.30, No.4, pp.75–82 (1997).
+\bibitem{G}
+elixir-lang: Elixir is a dynamic, functional language designed for building scalable and maintainable applications https://elixir-lang.org. (online), https://github. com/elixir-lang/elixir (2023.07.20)．
+\bibitem{H}
+Functions related to VM nodes. Retrieved June 20, 2023 from https://h-exdocs.pm/elixir/1.16.0-rc.0/Node.html
+\bibitem{I}
+Alexandre Jorge Barbosa Rodrigues and Viktória Fördős. 2018. To- wards Secure Erlang Systems. In Proceedings of the 17th ACM SIGPLAN International Workshop on Erlang (Erlang 2018). ACM, New York, NY, USA, 67–70. https://doi.org/10.1145/3239332.3242768
+\bibitem{J}
+Erlang Kernel Reference Manual Version 6.4, net kernel:monitor nodes. Retrieved June 20, 2023 from http: //erl-ang.org/doc/man/net\_kernel.html 
+
+%\bibitem{K}
+
+\bibitem{M}
+GenServer：A behaviour module for implementing the server of a client-server. https://hexdocs.pm/elixir/GenServer.html 
+
+%\bibitem{N}
+
+
+
+\end{thebibliography}
+
+\end{document}
