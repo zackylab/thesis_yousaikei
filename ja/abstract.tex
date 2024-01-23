@@ -1,13 +1,22 @@
 \begin{abstract}
-　近年，画像処理技術が広く普及し，医療画像や衛星画像分析などで機械学習を用いた複雑な処理が進展している. このような背景から, 画像処理において耐障害性が重要となり, 我々は，Broadway のデータ取り込みとデータ処理機能を画像処理パイプラインとして活用することに着目する. 研究の目的は, Nodeを用いたBroadwayパイプラインを構築し, 耐障害性を向上させた性能評価を行うことですある. 具体的には, BroadwayのSupervisorを使用してプロセスを監視し, Node間のメッセージ通信によってNIF関数のクラッシュが親ノードに波及しないようにする. 評価手法としては, 画像処理おいて, Fault-Injectionを用いた異常終了のシミュレーションやSupervisorの回復速度の測定が行わる. 実験結果として, 安全性では, 実際にメモリ不足などによる異常終了が発生した場合, 再起動ができた. また, NIF 関数の使用時 abort を発生する場合, 起動元の Erlang VM に波及されなかった. 提案されたBroadwayパイプラインは優れた耐障害性と信頼性を示し, 大規模な画像処理タスクへの適応性が向上している. 将来の課題としては, 特にNIF関数のクラッシュに伴うデータの保存や不整合への対処を考える.
+  医療や災害検出などの画像処理を行う場合，処理性能と耐障害性が求められる．
+  本研究では，処理性能と耐障害性の両立するOSSであるBroadwayと，
+  画像処理OSSであるEvisionを利用した画像処理パイプラインの構築を検討した．
+  Supervisorがプロセスを監視して再起動することで，このような耐障害性を実現する．
+  しかし，Evisionに含まれるネイティブコードの実行が異常終了した場合，たとえSupervisor
+  の監視下でも，処理系全体が終了してしまい，耐障害性が損なわれるという技術的課題があること
+  を我々は発見した．そこで本研究では，Broadwayと，Supervisor監督下のLinuxプロセスを
+  生成してネイティブコードを実行し，分散コンピューティング機構であるNodeを
+  用いて通信を行うことでネイティブコード実行の耐障害性を実現するOSSである
+  SpawnCoElixirを組みわせることを提案する．提案手法が設計意図通り
+  ネイティブコード障害時の耐障害性を備えていることを実証するために，ネイティブコードに
+  Fault-Injectionを埋め込むことで異常終了をシミュレートした．また障害から回復するまでに
+  必要な処理時間も計測した．Fault-Injectionを用いた異常終了シミュレーションの評価結果
+  では，設計通りに障害復旧できることを確認した．また，障害復旧に必要な処理時間の平均は
+  284.79nsと極めて短かった．将来課題としては，ネイティブコードで途中までデータ処理を実行できた場合に，ネイティブコード中での障害発生時にデータ消失する問題を解決することが
+  挙げられる．
 \begin{center}
   \textbf{Abstract}
 \end{center}
- 　In recent years, image processing technology has become widespread, and complex processing using machine learning is progressing in medical images, satellite image analysis, etc. Against this background, fault tolerance has become important in image processing, and we , we focus on utilizing Broadway's data acquisition and data processing functions as an image processing pipeline.The purpose of the research is to construct a Broadway pipeline using Node and evaluate its performance with improved fault tolerance. Specifically, we use Broadway's Supervisor to monitor the process and ensure that a crash in the NIF function does not spread to the parent node through message communication between nodes.As an evaluation method, in image processing, We simulated abnormal termination using Fault-Injection and measured the recovery speed of Supervisor. As a result of the experiment, in terms of safety, it was possible to restart if an abnormal termination actually occurred due to insufficient memory. Also, When an abort occurs when using a NIF function, it does not affect the Erlang VM that started it. The proposed Broadway pipeline shows excellent fault tolerance and reliability, and is adaptable to large-scale image processing tasks. As future issues, we will particularly consider saving data and dealing with inconsistencies caused by NIF function crashes.
+  Processing performance and fault tolerance are required when performing image processing for medical or disaster detection purposes. In this research, we considered building an image-processing pipeline using Broadway, an OSS that achieves both processing performance and fault tolerance, and Evision, an image-processing OSS. A supervisor monitors and restarts the observed process to achieve such fault tolerance. However, we found a technical issue: to lose fault tolerance by terminating the entire processing system even though Evision is under the Supervisor if the execution of the native code included in Evision terminates abnormally. Therefore, this research proposes a combination of Broadway and SpawnCoElixir, an OSS, to achieve fault tolerance of native code execution by spawning a Linux process under the Supervisor to execute the native code and communicating using Node, a distributed computing mechanism. In order to demonstrate that the proposed method has fault tolerance against native code faults as intended, we simulated abnormal termination by embedding a fault injection in the native code. We also measured the processing time required to recover from the fault. The evaluation results of an abnormal termination simulation using the fault injection confirmed that the native code could recover from faults as designed. The average processing time required for failure recovery was extremely short at 284.79ns. Our future works include solving the problem of data loss in the event of a fault in native code, if data processing can be executed partway through the native code.
 \end{abstract}
-
-
-
-
-
-
